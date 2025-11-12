@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Torrent Management System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 2.5em;
+        }
+
+        .search-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #555;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .checkbox-group label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 0;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 14px 30px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .monitoring-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #ddd;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-size: 16px;
+            color: #666;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .results-grid {
+            display: grid;
+            gap: 15px;
+        }
+
+        .torrent-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .torrent-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .torrent-name {
+            font-weight: 600;
+            font-size: 1.1em;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .torrent-info {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .torrent-info span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .badge-success { background: #d4edda; color: #155724; }
+        .badge-warning { background: #fff3cd; color: #856404; }
+        .badge-danger { background: #f8d7da; color: #721c24; }
+        .badge-info { background: #d1ecf1; color: #0c5460; }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+
+        .status-active { background: #28a745; }
+        .status-paused { background: #ffc107; }
+        .status-error { background: #dc3545; }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px;
+            color: #999;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 14px;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+        }
+
+        .btn-danger:hover {
+            box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎬 Torrent Management System</h1>
+
+        <!-- Search Section -->
+        <div class="search-section">
+            <h2>Search Torrents</h2>
+            <div class="form-group">
+                <label for="searchQuery">Search Query</label>
+                <input type="text" id="searchQuery" placeholder="Enter movie/show name...">
+            </div>
+
+            <div class="row">
+                <div class="form-group">
+                    <label for="quality">Quality</label>
+                    <select id="quality">
+                        <option value="">Any Quality</option>
+                        <option value="720p">720p</option>
+                        <option value="1080p">1080p</option>
+                        <option value="2160p">4K (2160p)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="minSize">Min Size (GB)</label>
+                    <input type="number" id="minSize" placeholder="0" step="0.1" min="0">
+                </div>
+
+                <div class="form-group">
+                    <label for="maxSize">Max Size (GB)</label>
+                    <input type="number" id="maxSize" placeholder="50" step="0.1" min="0">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Sources</label>
+                <div class="checkbox-group">
+                    <label><input type="checkbox" id="source1337x" checked> 1337x</label>
+                    <label><input type="checkbox" id="sourceWatchSoMuch" checked> WatchSoMuch</label>
+                </div>
+            </div>
+
+            <button onclick="searchTorrents()">🔍 Search</button>
+        </div>
+
+        <!-- Monitoring Controls -->
+        <div class="monitoring-controls">
+            <button onclick="startMonitoring()">▶️ Start Monitoring</button>
+            <button onclick="stopMonitoring()">⏸️ Stop Monitoring</button>
+            <span id="monitoringStatus" style="margin-left: 10px; align-self: center;"></span>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('results')">Search Results</button>
+            <button class="tab" onclick="switchTab('active')">Active Torrents</button>
+            <button class="tab" onclick="switchTab('blacklist')">Blacklist</button>
+        </div>
+
+        <!-- Tab Contents -->
+        <div id="resultsTab" class="tab-content active">
+            <div id="searchResults" class="empty-state">
+                <p>Enter a search query above to find torrents</p>
+            </div>
+        </div>
+
+        <div id="activeTab" class="tab-content">
+            <div id="activeTorrents" class="loading">
+                <p>Loading...</p>
+            </div>
+        </div>
+
+        <div id="blacklistTab" class="tab-content">
+            <div id="blacklistContent" class="empty-state">
+                <p>No blacklisted torrents</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '';
+
+        // Tab switching
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tab + 'Tab').classList.add('active');
+            
+            if (tab === 'active') loadActiveTorrents();
+            if (tab === 'blacklist') loadBlacklist();
+        }
+
+        // Search torrents
+        async function searchTorrents() {
+            const query = document.getElementById('searchQuery').value;
+            if (!query) {
+                alert('Please enter a search query');
+                return;
+            }
+
+            const quality = document.getElementById('quality').value;
+            const minSize = parseFloat(document.getElementById('minSize').value) || 0;
+            const maxSize = parseFloat(document.getElementById('maxSize').value) || 1000;
+            
+            const sources = [];
+            if (document.getElementById('source1337x').checked) sources.push('1337x');
+            if (document.getElementById('sourceWatchSoMuch').checked) sources.push('watchsomuch');
+
+            const resultsDiv = document.getElementById('searchResults');
+            resultsDiv.innerHTML = '<div class="loading"><p>Searching...</p></div>';
+
+            try {
+                const response = await fetch('/api/search', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query, quality, min_size: minSize, max_size: maxSize, sources })
+                });
+
+                const data = await response.json();
+                displaySearchResults(data.results || []);
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="empty-state"><p>Error: ${error.message}</p></div>`;
+            }
+        }
+
+        // Display search results
+        function displaySearchResults(results) {
+            const resultsDiv = document.getElementById('searchResults');
+            
+            if (results.length === 0) {
+                resultsDiv.innerHTML = '<div class="empty-state"><p>No results found</p></div>';
+                return;
+            }
+
+            resultsDiv.innerHTML = '<div class="results-grid">' + results.map(r => `
+                <div class="torrent-card">
+                    <div class="torrent-name">${r.name}</div>
+                    <div class="torrent-info">
+                        <span>📊 ${r.size}</span>
+                        <span>🌱 Seeds: ${r.seeds}</span>
+                        <span>📥 Peers: ${r.leeches}</span>
+                        <span class="badge badge-info">${r.source}</span>
+                    </div>
+                    <div class="action-buttons">
+                        <button class="btn-small" onclick='downloadTorrent(${JSON.stringify(r)})'>⬇️ Download</button>
+                    </div>
+                </div>
+            `).join('') + '</div>';
+        }
+
+        // Download torrent
+        async function downloadTorrent(torrent) {
+            if (!torrent.magnet_link) {
+                alert('No magnet link available for this torrent');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/download', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        magnet_link: torrent.magnet_link,
+                        source: torrent.source,
+                        name: torrent.name
+                    })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    alert('Torrent added successfully!');
+                    loadActiveTorrents();
+                } else {
+                    alert('Error: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        // Load active torrents
+        async function loadActiveTorrents() {
+            const div = document.getElementById('activeTorrents');
+            div.innerHTML = '<div class="loading"><p>Loading...</p></div>';
+
+            try {
+                const response = await fetch('/api/torrents');
+                const data = await response.json();
+                displayActiveTorrents(data.torrents || []);
+            } catch (error) {
+                div.innerHTML = `<div class="empty-state"><p>Error: ${error.message}</p></div>`;
+            }
+        }
+
+        // Display active torrents
+        function displayActiveTorrents(torrents) {
+            const div = document.getElementById('activeTorrents');
+            
+            if (torrents.length === 0) {
+                div.innerHTML = '<div class="empty-state"><p>No active torrents</p></div>';
+                return;
+            }
+
+            div.innerHTML = '<div class="results-grid">' + torrents.map(t => {
+                const progress = (t.progress * 100).toFixed(1);
+                const speedMB = (t.dlspeed / (1024 * 1024)).toFixed(2);
+                
+                return `
+                    <div class="torrent-card">
+                        <div class="torrent-name">
+                            <span class="status-indicator status-${t.state.includes('downloading') ? 'active' : t.state.includes('paused') ? 'paused' : 'error'}"></span>
+                            ${t.name}
+                        </div>
+                        <div class="torrent-info">
+                            <span>📊 ${(t.size / (1024**3)).toFixed(2)} GB</span>
+                            <span>⚡ ${speedMB} MB/s</span>
+                            <span>🌱 ${t.num_seeds} seeds</span>
+                            <span class="badge ${t.state.includes('downloading') ? 'badge-success' : 'badge-warning'}">${t.state}</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${progress}%"></div>
+                        </div>
+                        <small>${progress}% complete</small>
+                        <div class="action-buttons">
+                            <button class="btn-small btn-danger" onclick="deleteTorrent('${t.hash}')">🗑️ Delete</button>
+                        </div>
+                    </div>
+                `;
+            }).join('') + '</div>';
+        }
+
+        // Delete torrent
+        async function deleteTorrent(hash) {
+            if (!confirm('Are you sure you want to delete this torrent?')) return;
+
+            try {
+                await fetch(`/api/torrent/${hash}?delete_files=false`, { method: 'DELETE' });
+                loadActiveTorrents();
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        // Monitoring controls
+        async function startMonitoring() {
+            try {
+                await fetch('/api/monitoring/start', { method: 'POST' });
+                updateMonitoringStatus();
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function stopMonitoring() {
+            try {
+                await fetch('/api/monitoring/stop', { method: 'POST' });
+                updateMonitoringStatus();
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function updateMonitoringStatus() {
+            try {
+                const response = await fetch('/api/monitoring/status');
+                const data = await response.json();
+                const status = document.getElementById('monitoringStatus');
+                status.innerHTML = data.active ? 
+                    '<span class="badge badge-success">Monitoring Active</span>' :
+                    '<span class="badge badge-warning">Monitoring Stopped</span>';
+            } catch (error) {
+                console.error('Error updating status:', error);
+            }
+        }
+
+        // Load blacklist
+        async function loadBlacklist() {
+            const div = document.getElementById('blacklistContent');
+            try {
+                const response = await fetch('/api/blacklist');
+                const data = await response.json();
+                
+                if (data.blacklist.length === 0) {
+                    div.innerHTML = '<div class="empty-state"><p>No blacklisted torrents</p></div>';
+                } else {
+                    div.innerHTML = '<div class="results-grid">' + data.blacklist.map(hash => `
+                        <div class="torrent-card">
+                            <div class="torrent-name">Hash: ${hash}</div>
+                            <div class="action-buttons">
+                                <button class="btn-small" onclick="removeFromBlacklist('${hash}')">Remove</button>
+                            </div>
+                        </div>
+                    `).join('') + '</div>';
+                }
+            } catch (error) {
+                div.innerHTML = `<div class="empty-state"><p>Error: ${error.message}</p></div>`;
+            }
+        }
+
+        async function removeFromBlacklist(hash) {
+            try {
+                await fetch(`/api/blacklist/${hash}`, { method: 'DELETE' });
+                loadBlacklist();
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        // Initialize
+        updateMonitoringStatus();
+        setInterval(updateMonitoringStatus, 10000);
+    </script>
+</body>
+</html>
